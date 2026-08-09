@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  cowrie:
+    image: cowrie/cowrie:latest
+    container_name: cowrie
+    ports:
+      - "2222:2222"        # SSH honeypot portu
+    volumes:
+      - cowrie-logs:/cowrie/cowrie-git/var/log/cowrie
+    restart: unless-stopped
+
+  processor:
+    build: ./processor
+    container_name: log-processor
+    volumes:
+      - cowrie-logs:/logs:ro    # Cowrie loglarını sadece okuma olarak bağla
+      - ./data:/data            # SQLite veritabanı burada saklanacak
+    depends_on:
+      - cowrie
+    restart: unless-stopped
+
+  dashboard:
+    build: ./dashboard
+    container_name: dashboard
+    ports:
+      - "5000:5000"            # Web panel portu
+    volumes:
+      - ./data:/data:ro        # Veritabanını sadece okuma olarak bağla
+    depends_on:
+      - processor
+    restart: unless-stopped
+
+volumes:
+  cowrie-logs:
