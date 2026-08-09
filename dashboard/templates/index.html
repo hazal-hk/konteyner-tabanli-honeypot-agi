@@ -9,13 +9,14 @@
         .table-container { max-height: 500px; overflow-y: auto; }
         .new-row { animation: highlight 1.5s ease-out; }
         @keyframes highlight { from { background-color: #fff3cd; } to { background-color: transparent; } }
+        .flag-icon { font-size: 1.2rem; margin-right: 4px; }
     </style>
 </head>
 <body class="bg-light">
     <div class="container mt-4">
         <h1 class="text-center mb-4">🛡️ Honeypot Canlı Saldırı Paneli</h1>
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
                         <h5 class="card-title">Toplam Olay</h5>
@@ -23,7 +24,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-8">
+            <div class="col-md-5">
                 <div class="card">
                     <div class="card-header">En Çok Denenen Başarısız Girişler</div>
                     <ul class="list-group list-group-flush" id="top-failures">
@@ -31,6 +32,19 @@
                             <li class="list-group-item d-flex justify-content-between">
                                 {{ row[0] }}
                                 <span class="badge bg-secondary">{{ row[1] }} kez</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">🌍 En Çok Saldırılan Ülkeler</div>
+                    <ul class="list-group list-group-flush" id="top-countries">
+                        {% for c in top_countries %}
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span><span class="flag-icon">{{ c.country_code | flag_emoji }}</span> {{ c.country }}</span>
+                                <span class="badge bg-danger">{{ c.cnt }}</span>
                             </li>
                         {% endfor %}
                     </ul>
@@ -49,60 +63,81 @@
                         <tr>
                             <th>Zaman</th>
                             <th>Kaynak IP</th>
+                            <th>Ülke / Şehir</th>
                             <th>Olay Tipi</th>
                             <th>Detay</th>
                         </tr>
                     </thead>
-                    <tbody id="events-body">
-                        <!-- JavaScript ile doldurulacak -->
-                    </tbody>
+                    <tbody id="events-body"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        let lastEventId = 0;  // Son çekilen en yüksek id'yi tut
+        let lastEventId = 0;
+
+        // Ülke kodundan bayrak emoji'si döndüren yardımcı fonksiyon
+        function countryCodeToFlag(code) {
+            if (!code) return '';
+            const base = 127397; // 'A' harfinin Unicode bölgesel göstergesi
+            return String.fromCodePoint(...code.toUpperCase().split('').map(c => c.charCodeAt(0) + base));
+        }
 
         async function fetchEvents() {
             try {
                 const response = await fetch('/api/events');
                 const events = await response.json();
                 if (events.length === 0) return;
-
-                // En yeni olayın id'sini bul (en yukarıda en yeni)
                 let newLastId = events[0].id;
-                // Eğer yeni olay yoksa çık
                 if (newLastId <= lastEventId) return;
                 lastEventId = newLastId;
 
                 const tbody = document.getElementById('events-body');
-                tbody.innerHTML = '';  // Tamamen yenile (alternatif: sadece yenileri ekle)
+                tbody.innerHTML = '';
                 events.forEach(event => {
-                    const row = tbody.insertRow(0); // üste ekle
+                    const row = tbody.insertRow(0);
                     row.classList.add('new-row');
+                    const flag = countryCodeToFlag(event.country_code);
+                    const location = event.country ? `${flag} ${event.country}, ${event.city || ''}` : '-';
                     row.innerHTML = `
                         <td>${event.timestamp}</td>
                         <td>${event.src_ip}</td>
+                        <td>${location}</td>
                         <td>${event.event_type}</td>
                         <td>${event.details}</td>
                     `;
                 });
-
-                // Güncelleme zamanını yaz
                 document.getElementById('update-time').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString();
-
-                // Toplam olay sayısını da güncelleyelim (isteğe bağlı: /api/stats yapılabilir, şimdilik sayıyı uzunluk olarak basalım)
-                document.getElementById('total-events').textContent = events.length + '+'; 
+                document.getElementById('total-events').textContent = events.length + '+';
             } catch (err) {
                 console.error('Veri çekilemedi:', err);
             }
         }
 
-        // İlk yüklemede hemen çek
+        async function fetchCountries() {
+            try {
+                const resp = await fetch('/api/countries');
+                const countries = await resp.json();
+                const ul = document.getElementById('top-countries');
+                ul.innerHTML = '';
+                countries.forEach(c => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between';
+                    li.innerHTML = `<span><span class="flag-icon">${countryCodeToFlag(c.country_code)}</span> ${c.country}</span><span class="badge bg-danger">${c.cnt}</span>`;
+                    ul.appendChild(li);
+                });
+            } catch (e) {
+                console.error('Ülke istatistikleri alınamadı:', e);
+            }
+        }
+
         fetchEvents();
-        // Her 3 saniyede bir güncelle
-        setInterval(fetchEvents, 3000);
+        fetchCountries();
+        setInterval(() => {
+            fetchEvents();
+            fetchCountries();
+        }, 5000);
     </script>
 </body>
 </html>
