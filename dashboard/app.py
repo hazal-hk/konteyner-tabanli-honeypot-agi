@@ -1,9 +1,44 @@
 from flask import Flask, render_template, jsonify
 import sqlite3
+import os
 
 app = Flask(__name__)
 DB_FILE = "/data/attacks.db"
 
+# ---------- Bayrak Emoji Filtresi ----------
+def flag_emoji(country_code):
+    if not country_code:
+        return ''
+    return ''.join(chr(ord(c) + 127397) for c in country_code.upper())
+
+app.jinja_env.filters['flag_emoji'] = flag_emoji
+
+# ---------- Veritabanı Şemasını Garantile ----------
+def ensure_schema():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT,
+                    src_ip TEXT,
+                    event_type TEXT,
+                    details TEXT
+                )''')
+    for col, col_type in [('country', 'TEXT DEFAULT ""'),
+                          ('city', 'TEXT DEFAULT ""'),
+                          ('country_code', 'TEXT DEFAULT ""'),
+                          ('lat', 'REAL DEFAULT 0'),
+                          ('lon', 'REAL DEFAULT 0')]:
+        try:
+            c.execute(f"ALTER TABLE events ADD COLUMN {col} {col_type}")
+        except sqlite3.OperationalError:
+            pass
+    conn.commit()
+    conn.close()
+
+ensure_schema()  # uygulama başlar başlamaz çağır
+
+# ---------- Veritabanı Fonksiyonları ----------
 def get_recent_events(limit=50):
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
@@ -35,6 +70,7 @@ def get_top_countries(limit=5):
     conn.close()
     return [dict(r) for r in rows]
 
+# ---------- Rotalar ----------
 @app.route('/')
 def index():
     total, top_failures = get_stats()
@@ -63,6 +99,16 @@ def api_events():
 @app.route('/api/countries')
 def api_countries():
     return jsonify(get_top_countries(10))
+
+@app.route('/api/stats')
+def api_stats():
+    total, top_failures = get_stats()
+    top_countries = get_top_countries(5)
+    return jsonify({
+        'total': total,
+        'top_failures': [{'details': r[0], 'count': r[1]} for r in top_failures],
+        'top_countries': [{'country': c['country'], 'country_code': c['country_code'], 'cnt': c['cnt']} for c in top_countries]
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

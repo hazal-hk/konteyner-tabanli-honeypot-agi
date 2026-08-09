@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   cowrie:
     image: cowrie/cowrie:latest
     container_name: cowrie
     ports:
-      - "2222:2222"        # SSH honeypot portu
+      - "2222:2222"
     volumes:
       - cowrie-logs:/cowrie/cowrie-git/var/log/cowrie
     restart: unless-stopped
@@ -14,8 +12,11 @@ services:
     build: ./processor
     container_name: log-processor
     volumes:
-      - cowrie-logs:/logs:ro    # Cowrie loglarını sadece okuma olarak bağla
-      - ./data:/data            # SQLite veritabanı burada saklanacak
+      - cowrie-logs:/logs:ro
+      - ./data:/data
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     depends_on:
       - cowrie
     restart: unless-stopped
@@ -24,9 +25,9 @@ services:
     build: ./dashboard
     container_name: dashboard
     ports:
-      - "5000:5000"            # Web panel portu
+      - "5000:5000"
     volumes:
-      - ./data:/data:ro        # Veritabanını sadece okuma olarak bağla
+      - ./data:/data:ro
     depends_on:
       - processor
     restart: unless-stopped
