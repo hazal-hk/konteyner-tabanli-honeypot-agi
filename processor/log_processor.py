@@ -3,7 +3,7 @@ import time
 import os
 import sqlite3
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 LOG_FILE = "/logs/cowrie.json"
 DB_FILE = "/data/attacks.db"
@@ -70,6 +70,13 @@ def init_db():
     conn.commit()
     conn.close()
 
+# ----------Zaman damgası formatlama ----------
+def format_local_time(utc_timestamp_str):
+    # Cowrie timestamp örneği: "2026-08-10T12:34:56.123456Z"
+    dt = datetime.fromisoformat(utc_timestamp_str.replace('Z', '+00:00'))
+    local_dt = dt.astimezone(timezone(timedelta(hours=3)))  # Türkiye saati (UTC+3)
+    return local_dt.strftime('%d.%m.%Y %H:%M:%S')
+
 # ---------- Coğrafi Konum ----------
 def get_geolocation(ip):
     """IP adresi için ülke, şehir, koordinat bilgisini döndür."""
@@ -121,9 +128,11 @@ def send_telegram(event):
         "cowrie.session.file_download": "📥"
     }
     emoji = emoji_map.get(event["event_type"], "⚠️")
-    
+    #zaman dilimini ayarlama
+    local_time = format_local_time(event['timestamp'])
+
     msg = f"{emoji} **Honeypot Uyarısı**\n"
-    msg += f"📅 Zaman: {event['timestamp']}\n"
+    msg += f"📅 Zaman: {local_time}\n"
     msg += f"🌍 IP: {event['src_ip']}"
     if event.get("country"):
         msg += f" ({event['country']}, {event['city']})"

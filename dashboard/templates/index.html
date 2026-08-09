@@ -75,14 +75,26 @@
     </div>
 
     <script>
-        let lastEventId = 0;
-
-        // Ülke kodundan bayrak emoji'si döndüren yardımcı fonksiyon
+        // Bayrak emojisi
         function countryCodeToFlag(code) {
             if (!code) return '';
-            const base = 127397; // 'A' harfinin Unicode bölgesel göstergesi
+            const base = 127397;
             return String.fromCodePoint(...code.toUpperCase().split('').map(c => c.charCodeAt(0) + base));
         }
+
+        function formatTime(timestamp) {
+        if (!timestamp) return '';
+        // Eğer sonunda "Z" varsa veya +HH:MM/-HH:MM offset'i varsa olduğu gibi kullan,
+        // aksi halde UTC olduğunu belirtmek için 'Z' ekle.
+        let dateString = timestamp;
+        if (!/[+-]\d{2}:\d{2}$/.test(timestamp) && !timestamp.endsWith('Z')) {
+            dateString += 'Z';
+        }
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleString();
+        }
+
+        let lastEventId = 0;
 
         async function fetchEvents() {
             try {
@@ -99,9 +111,9 @@
                     const row = tbody.insertRow(0);
                     row.classList.add('new-row');
                     const flag = countryCodeToFlag(event.country_code);
-                    const location = event.country ? `${flag} ${event.country}, ${event.city || ''}` : '-';
+                    const location = event.country ? `${flag} ${event.country}, ${event.city || ''}` : '🏠 Local';
                     row.innerHTML = `
-                        <td>${event.timestamp}</td>
+                        <td>${formatTime(event.timestamp)}</td>
                         <td>${event.src_ip}</td>
                         <td>${location}</td>
                         <td>${event.event_type}</td>
@@ -109,34 +121,46 @@
                     `;
                 });
                 document.getElementById('update-time').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString();
-                document.getElementById('total-events').textContent = events.length + '+';
             } catch (err) {
                 console.error('Veri çekilemedi:', err);
             }
         }
 
-        async function fetchCountries() {
+        async function fetchStats() {
             try {
-                const resp = await fetch('/api/countries');
-                const countries = await resp.json();
-                const ul = document.getElementById('top-countries');
-                ul.innerHTML = '';
-                countries.forEach(c => {
+                const resp = await fetch('/api/stats');
+                const stats = await resp.json();
+                // Toplam olay
+                document.getElementById('total-events').textContent = stats.total;
+                // En çok başarısız girişler
+                const failList = document.getElementById('top-failures');
+                failList.innerHTML = '';
+                stats.top_failures.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between';
+                    li.innerHTML = `${item.details} <span class="badge bg-secondary">${item.count} kez</span>`;
+                    failList.appendChild(li);
+                });
+                // En çok saldırılan ülkeler
+                const countryList = document.getElementById('top-countries');
+                countryList.innerHTML = '';
+                stats.top_countries.forEach(c => {
                     const li = document.createElement('li');
                     li.className = 'list-group-item d-flex justify-content-between';
                     li.innerHTML = `<span><span class="flag-icon">${countryCodeToFlag(c.country_code)}</span> ${c.country}</span><span class="badge bg-danger">${c.cnt}</span>`;
-                    ul.appendChild(li);
+                    countryList.appendChild(li);
                 });
             } catch (e) {
-                console.error('Ülke istatistikleri alınamadı:', e);
+                console.error('İstatistik alınamadı:', e);
             }
         }
 
+        // İlk çalıştırma ve periyodik güncelleme
         fetchEvents();
-        fetchCountries();
+        fetchStats();
         setInterval(() => {
             fetchEvents();
-            fetchCountries();
+            fetchStats();
         }, 5000);
     </script>
 </body>

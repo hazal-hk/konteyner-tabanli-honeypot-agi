@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 COPY log_processor.py .
-# Ek bağımlılık yok, ama yine de çalıştırmak için CMD
-CMD ["python", "log_processor.py"]
+CMD ["python", "-u", "log_processor.py"]
