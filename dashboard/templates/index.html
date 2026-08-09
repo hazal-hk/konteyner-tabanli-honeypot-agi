@@ -3,27 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Honeypot Saldırı Paneli</title>
+    <title>Honeypot Canlı Saldırı Paneli</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <meta http-equiv="refresh" content="10"> <!-- 10 saniyede bir yenile -->
+    <style>
+        .table-container { max-height: 500px; overflow-y: auto; }
+        .new-row { animation: highlight 1.5s ease-out; }
+        @keyframes highlight { from { background-color: #fff3cd; } to { background-color: transparent; } }
+    </style>
 </head>
 <body class="bg-light">
     <div class="container mt-4">
         <h1 class="text-center mb-4">🛡️ Honeypot Canlı Saldırı Paneli</h1>
-        
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
                         <h5 class="card-title">Toplam Olay</h5>
-                        <p class="card-text display-6">{{ total }}</p>
+                        <p class="card-text display-6" id="total-events">{{ total }}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">En Çok Denenen Başarısız Girişler</div>
-                    <ul class="list-group list-group-flush">
+                    <ul class="list-group list-group-flush" id="top-failures">
                         {% for row in top_failures %}
                             <li class="list-group-item d-flex justify-content-between">
                                 {{ row[0] }}
@@ -36,8 +39,11 @@
         </div>
 
         <div class="card">
-            <div class="card-header bg-dark text-white">Son Saldırı Olayları</div>
-            <div class="card-body table-responsive p-0">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span>Son Saldırı Olayları</span>
+                <small id="update-time" class="text-light">yükleniyor...</small>
+            </div>
+            <div class="card-body p-0 table-container">
                 <table class="table table-striped table-hover mb-0">
                     <thead class="table-dark">
                         <tr>
@@ -47,19 +53,56 @@
                             <th>Detay</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for event in events %}
-                        <tr>
-                            <td>{{ event['timestamp'] }}</td>
-                            <td>{{ event['src_ip'] }}</td>
-                            <td>{{ event['event_type'] }}</td>
-                            <td>{{ event['details'] }}</td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="events-body">
+                        <!-- JavaScript ile doldurulacak -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    <script>
+        let lastEventId = 0;  // Son çekilen en yüksek id'yi tut
+
+        async function fetchEvents() {
+            try {
+                const response = await fetch('/api/events');
+                const events = await response.json();
+                if (events.length === 0) return;
+
+                // En yeni olayın id'sini bul (en yukarıda en yeni)
+                let newLastId = events[0].id;
+                // Eğer yeni olay yoksa çık
+                if (newLastId <= lastEventId) return;
+                lastEventId = newLastId;
+
+                const tbody = document.getElementById('events-body');
+                tbody.innerHTML = '';  // Tamamen yenile (alternatif: sadece yenileri ekle)
+                events.forEach(event => {
+                    const row = tbody.insertRow(0); // üste ekle
+                    row.classList.add('new-row');
+                    row.innerHTML = `
+                        <td>${event.timestamp}</td>
+                        <td>${event.src_ip}</td>
+                        <td>${event.event_type}</td>
+                        <td>${event.details}</td>
+                    `;
+                });
+
+                // Güncelleme zamanını yaz
+                document.getElementById('update-time').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString();
+
+                // Toplam olay sayısını da güncelleyelim (isteğe bağlı: /api/stats yapılabilir, şimdilik sayıyı uzunluk olarak basalım)
+                document.getElementById('total-events').textContent = events.length + '+'; 
+            } catch (err) {
+                console.error('Veri çekilemedi:', err);
+            }
+        }
+
+        // İlk yüklemede hemen çek
+        fetchEvents();
+        // Her 3 saniyede bir güncelle
+        setInterval(fetchEvents, 3000);
+    </script>
 </body>
 </html>
