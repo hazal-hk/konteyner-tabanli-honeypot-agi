@@ -163,13 +163,15 @@ docker exec log-processor python3 /tmp/seed_data.py
 
 Bu proje MIT lisansı ile lisanslanmıştır. Ayrıntılar için LICENSE dosyasına bakınız.
 
-## Teşekkür
+## Teşekkürler
 
     Cowrie - SSH/Telnet Honeypot
 
     ip-api.com - Ücretsiz IP coğrafi konum servisi
 
     Bootstrap - Arayüz bileşenleri
+
+Bu projenin geliştirme sürecinde, mimari kararlar ve akademik rehberlik konusundaki değerli katkılarından ötürü staj sorumlum/hocam **Öskan BARUTÇUOĞLU**'na teşekkür ederim.
 
 📧 İletişim
 
