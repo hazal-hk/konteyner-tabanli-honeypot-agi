@@ -1,1 +1,12 @@
+# Ortam değişkenleri (Token, Chat ID)
 .env
+
+# Veritabanı ve blocklist (canlı veriler)
+data/
+
+# Python artıkları
+__pycache__/
+*.pyc
+
+# Docker ile ilgili (isteğe bağlı)
+docker-compose.override.yml
