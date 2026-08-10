@@ -69,57 +69,66 @@ flowchart TD
 ```bash
 git clone https://github.com/hazal-hk/konteyner-tabanli-honeypot-agi
 cd konteyner-tabanli-honeypot-agi
+```
 
 ### 2. Ortam değişkenlerini ayarlayın
 ```bash
 cp .env.example .env
 nano .env   # TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID bilgilerinizi girin
+```
 
 ### 3. Sistemi başlatın
 ```bash
 docker-compose up -d --build
+```
 
-4. Paneli açın
-
+### 4. Paneli açın
+```
 Tarayıcınızdan http://localhost:5000 adresine gidin.
+```
 
-🎭 Demo Senaryosu
+## Demo Senaryosu
 Otomatik saldırı simülasyonu
-bash
+
+```bash
 
 chmod +x demo.sh
 ./demo.sh
+```
 
 Bu betik, honeypot’a çeşitli başarısız/başarılı SSH girişleri yapar ve komutlar çalıştırır.
 Paneli gözlemleyin
 
-    Olaylar tablosu canlı olarak güncellenir.
+    -Olaylar tablosu canlı olarak güncellenir.
 
-    “Engellenen IP’ler” kartında saldırgan IP’si “bekliyor” durumunda belirir.
+    -“Engellenen IP’ler” kartında saldırgan IP’si “bekliyor” durumunda belirir.
 
-    Telegram bildirimlerini alırsınız.
+    -Telegram bildirimlerini alırsınız.
 
 
-IP’yi kalıcı olarak engelleme
-bash
+## IP’yi kalıcı olarak engelleme
+```bash
 
 chmod +x apply_blocks.sh
 ./apply_blocks.sh
+```
 
 Panelde aynı IP’nin rozeti “engellendi” (yeşil) olarak değişir.
-Engellemeyi doğrulamak için:
-bash
+## Engellemeyi doğrulamak için:
+```bash
 
 sudo iptables -L INPUT -v -n
+```
 
-(İsteğe bağlı) Sahte geçmiş verisi ekleme
-bash
+## (İsteğe bağlı) Sahte geçmiş verisi ekleme
+```bash
 
 docker cp seed_data.py log-processor:/tmp/seed_data.py
 docker exec log-processor python3 /tmp/seed_data.py
+```
 
-Proje Yapısı
-
+## Proje Yapısı
+```
 .
 ├── docker-compose.yml        # Servis orkestrasyonu
 ├── .env.example              # Ortam değişkenleri şablonu
@@ -139,20 +148,22 @@ Proje Yapısı
 │       └── index.html
 └── data/                     # (Çalışma anında oluşur) SQLite DB ve blocklist
 
+```
 
-🔒 Güvenlik Notları
-
+## Güvenlik Notları
+```
     .env dosyanızı asla commit’lemeyin. Depoda yalnızca .env.example şablonu bulunur.
 
     Telegram token’ınızı projeyi yayınladıktan sonra yenilemeniz önerilir (BotFather → Revoke token).
 
     data/ klasörü .gitignore ile tamamen hariç tutulmuştur.
+```
 
-📜 Lisans
+## Lisans
 
 Bu proje MIT lisansı ile lisanslanmıştır. Ayrıntılar için LICENSE dosyasına bakınız.
 
-🙏 Teşekkür
+## Teşekkür
 
     Cowrie - SSH/Telnet Honeypot
 
