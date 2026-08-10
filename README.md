@@ -159,6 +159,13 @@ docker exec log-processor python3 /tmp/seed_data.py
     data/ klasörü .gitignore ile tamamen hariç tutulmuştur.
 ```
 
+## 🤖 Yapay Zekâ Kullanımı
+```
+Bu projenin geliştirilmesinde fikir danışmanlığı ve kod parçacıklarının oluşturulması 
+için yapay zekâ tabanlı bir asistan kullanılmıştır. Tüm kod gözden geçirilmiş, 
+test edilmiş ve son haliyle proje sahibine aittir.
+```
+
 ## Lisans
 
 Bu proje MIT lisansı ile lisanslanmıştır. Ayrıntılar için LICENSE dosyasına bakınız.
