@@ -110,5 +110,17 @@ def api_stats():
         'top_countries': [{'country': c['country'], 'country_code': c['country_code'], 'cnt': c['cnt']} for c in top_countries]
     })
 
+BLOCKLIST_FILE = "/data/blocklist.txt"
+
+@app.route('/api/blocked')
+def api_blocked():
+    blocked_ips = []
+    try:
+        with open(BLOCKLIST_FILE, "r") as f:
+            blocked_ips = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        pass
+    return jsonify(blocked_ips)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

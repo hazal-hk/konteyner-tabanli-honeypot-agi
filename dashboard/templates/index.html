@@ -7,9 +7,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .table-container { max-height: 500px; overflow-y: auto; }
-        .new-row { animation: highlight 1.5s ease-out; }
+        .new-row { animation: highlight 1s ease-out; }
         @keyframes highlight { from { background-color: #fff3cd; } to { background-color: transparent; } }
         .flag-icon { font-size: 1.2rem; margin-right: 4px; }
+        .pop { animation: pop 0.3s ease; }
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body class="bg-light">
@@ -72,6 +74,20 @@
                 </table>
             </div>
         </div>
+        <div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                🚫 Engellenen IP'ler (iptables durumu)
+            </div>
+            <div class="card-body" id="blocked-container">
+                <p class="text-muted" id="no-blocked-msg">Henüz engellenen IP yok.</p>
+                <ul class="list-group" id="blocked-list" style="display: none;">
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
     </div>
 
     <script>
@@ -132,6 +148,10 @@
                 const stats = await resp.json();
                 // Toplam olay
                 document.getElementById('total-events').textContent = stats.total;
+                const totalEl = document.getElementById('total-events');
+                totalEl.textContent = stats.total;
+                totalEl.classList.add('pop');
+                setTimeout(() => totalEl.classList.remove('pop'), 300);
                 // En çok başarısız girişler
                 const failList = document.getElementById('top-failures');
                 failList.innerHTML = '';
@@ -154,14 +174,51 @@
                 console.error('İstatistik alınamadı:', e);
             }
         }
+        async function fetchBlocked() {
+            try {
+                const resp = await fetch('/api/blocked');
+                const entries = await resp.json();  // ["BLOCKED:172.19.0.1", "10.0.0.5"] gibi
+                const msgEl = document.getElementById('no-blocked-msg');
+                const listEl = document.getElementById('blocked-list');
 
+                if (entries.length === 0) {
+                    msgEl.style.display = 'block';
+                    listEl.style.display = 'none';
+                    listEl.innerHTML = '';
+                } else {
+                    msgEl.style.display = 'none';
+                    listEl.style.display = 'block';
+                    listEl.innerHTML = '';
+                    entries.forEach(entry => {
+                        let ip, status, badgeClass;
+                        if (entry.startsWith('BLOCKED:')) {
+                            ip = entry.substring(8);
+                            status = 'engellendi';
+                            badgeClass = 'bg-success';
+                        } else {
+                            ip = entry;
+                            status = 'bekliyor';
+                            badgeClass = 'bg-warning text-dark';
+                        }
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        li.innerHTML = `<strong>${ip}</strong> <span class="badge ${badgeClass}">${status}</span>`;
+                        listEl.appendChild(li);
+                    });
+                }
+            } catch (e) {
+                console.error('Engellenen IP listesi alınamadı:', e);
+            }
+        }
         // İlk çalıştırma ve periyodik güncelleme
         fetchEvents();
         fetchStats();
+        fetchBlocked(); 
         setInterval(() => {
             fetchEvents();
             fetchStats();
-        }, 5000);
+            fetchBlocked(); 
+        }, 3000);
     </script>
 </body>
 </html>
