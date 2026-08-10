@@ -217,18 +217,30 @@ def parse_line(line):
     except json.JSONDecodeError:
         return 
 def block_ip(ip):
-    """IP'yi blocklist dosyasına ekle (yerel IP'leri atla)."""
-    if ip.startswith("127."):     # Sadece gerçek loopback'i engelleme, demo için özel IP'lere izin ver
+    """IP'yi blocklist dosyasına ekle (sadece loopback'i atla). 
+    Eğer IP zaten listede (bekleyen veya engellenmiş olarak) varsa tekrar ekleme."""
+    if ip.startswith("127."):
         return
     blockfile = "/data/blocklist.txt"
     try:
-        # Daha önce eklenmiş mi kontrol et
-        with open(blockfile, "a+") as f:
-            f.seek(0)
-            blocked = [line.strip() for line in f.readlines()]
-            if ip not in blocked:
-                f.write(ip + "\n")
-                print(f"[BLOCK] IP blocklist'e eklendi: {ip}")
+        # Dosyayı oku, mevcut IP'leri (BLOCKED: olanlar dahil) kontrol et
+        existing_ips = set()
+        if os.path.exists(blockfile):
+            with open(blockfile, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("BLOCKED:"):
+                        existing_ips.add(line[8:])  # BLOCKED: kısmını at
+                    elif line:
+                        existing_ips.add(line)
+        if ip in existing_ips:
+            print(f"[BLOCK] IP zaten listede, atlanıyor: {ip}")
+            return
+        
+        # Ekle (yeni IP)
+        with open(blockfile, "a") as f:
+            f.write(ip + "\n")
+            print(f"[BLOCK] IP blocklist'e eklendi: {ip}")
     except Exception as e:
         print(f"[BLOCK] Dosya yazma hatası: {e}")
 
