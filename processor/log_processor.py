@@ -175,6 +175,9 @@ def insert_event(event):
     if event['event_type'] in ["cowrie.login.failed", "cowrie.login.success",
                                "cowrie.command.input", "cowrie.session.file_download"]:
         send_telegram(event)
+    
+    if event['event_type'] in ["cowrie.login.success", "cowrie.session.file_download"]:
+        block_ip(event['src_ip'])
 
 # ---------- Dosya İzleme (önceki ile aynı) ----------
 def follow(file_path):
@@ -212,7 +215,22 @@ def parse_line(line):
             'details': details
         }
     except json.JSONDecodeError:
-        return None
+        return 
+def block_ip(ip):
+    """IP'yi blocklist dosyasına ekle (yerel IP'leri atla)."""
+    if ip.startswith("127."):     # Sadece gerçek loopback'i engelleme, demo için özel IP'lere izin ver
+        return
+    blockfile = "/data/blocklist.txt"
+    try:
+        # Daha önce eklenmiş mi kontrol et
+        with open(blockfile, "a+") as f:
+            f.seek(0)
+            blocked = [line.strip() for line in f.readlines()]
+            if ip not in blocked:
+                f.write(ip + "\n")
+                print(f"[BLOCK] IP blocklist'e eklendi: {ip}")
+    except Exception as e:
+        print(f"[BLOCK] Dosya yazma hatası: {e}")
 
 if __name__ == "__main__":
     print("Log işleyici başlatılıyor...")
