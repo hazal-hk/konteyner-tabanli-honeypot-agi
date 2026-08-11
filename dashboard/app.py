@@ -1,16 +1,29 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request, Response
 import sqlite3
 import os
-
-DASHBOARD_USER = os.environ.get("DASHBOARD_USER", "admin")
-DASHBOARD_PASS = os.environ.get("DASHBOARD_PASS", "password")
-
-def check_auth(username, password):
-    return username == DASHBOARD_USER and password == DASHBOARD_PASS
 
 app = Flask(__name__)
 DB_FILE = "/data/attacks.db"
 
+
+def check_auth(username, password):
+    DASHBOARD_USER = os.environ.get("DASHBOARD_USER", "admin")
+    DASHBOARD_PASS = os.environ.get("DASHBOARD_PASS", "password")
+    return username == DASHBOARD_USER and password == DASHBOARD_PASS
+
+def authenticate():
+    return Response(
+        'Giriş yap', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'}
+    )
+
+# ---------- Basic Auth (Her istekte çalışacak) ----------
+@app.before_request
+def require_basic_auth():
+    auth = request.authorization
+    if not auth or not check_auth(auth.username, auth.password):
+        return authenticate()
+        
 # ---------- Bayrak Emoji Filtresi ----------
 def flag_emoji(country_code):
     if not country_code:
