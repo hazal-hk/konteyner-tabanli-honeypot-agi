@@ -2,6 +2,12 @@ from flask import Flask, render_template, jsonify
 import sqlite3
 import os
 
+DASHBOARD_USER = os.environ.get("DASHBOARD_USER", "admin")
+DASHBOARD_PASS = os.environ.get("DASHBOARD_PASS", "password")
+
+def check_auth(username, password):
+    return username == DASHBOARD_USER and password == DASHBOARD_PASS
+
 app = Flask(__name__)
 DB_FILE = "/data/attacks.db"
 

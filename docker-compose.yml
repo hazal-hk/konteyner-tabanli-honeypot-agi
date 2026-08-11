@@ -28,6 +28,9 @@ services:
       - "5000:5000"
     volumes:
       - ./data:/data:ro
+    environment:
+      - DASHBOARD_USER=${DASHBOARD_USER}
+      - DASHBOARD_PASS=${DASHBOARD_PASS}
     depends_on:
       - processor
     restart: unless-stopped
