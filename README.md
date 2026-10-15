@@ -6,7 +6,7 @@ Bu proje, **HPC (Yüksek Başarımlı Hesaplama)** ortamlarında veya herhangi b
 
 ---
 
-## ✨ Özellikler
+##  Özellikler
 
 - **Cowrie SSH Honeypot:** Sahte bir SSH sunucusu ile saldırganları tuzağa düşürür, tüm komutları ve etkileşimleri kaydeder.
 - **Gerçek Zamanlı Web Paneli:** Flask + Bootstrap ile oluşturulmuş, olayları canlı olarak gösteren dashboard.
@@ -21,7 +21,7 @@ Bu proje, **HPC (Yüksek Başarımlı Hesaplama)** ortamlarında veya herhangi b
 
 ---
 
-## 🧱 Mimari
+##  Mimari
 
 ```mermaid
 flowchart TD
@@ -38,7 +38,7 @@ flowchart TD
 
 ---
 
-## 🛠️ Kullanılan Teknolojiler
+##  Kullanılan Teknolojiler
 
 | Bileşen          | Teknoloji / Dil           |
 |------------------|---------------------------|
